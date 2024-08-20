@@ -16,7 +16,7 @@ argParser.add_argument("-tp", "--trace_performance", help="Path to dump traces g
 argParser.add_argument("-ta", "--trace_asm", help="Path to dump ASM-trace")
 argParser.add_argument("-ti", "--trace_instr", help="Path to dump instruction-trace")
 argParser.add_argument("-gdb", "--debug", action="store_true", help="Run in ETISS-debug mode")
-argParser.add_argument("-tgdb", "--target_debug", action="store_true", help="Run in target-SW-debug mode")
+argParser.add_argument("-tgdb", "--target_debug", help="Run in target-SW-debug mode with specified debuger (<YOUR_PATH>/bin/riscv<32|64>-unknown-elf-gdb)")
 argParser.add_argument("-p", "--profile", action="store_true", help="Run in profile mode (valgrind)")
 args = argParser.parse_args()
 
@@ -24,20 +24,20 @@ args = argParser.parse_args()
 if args.core is None:
     sys.exit("FATAL: Called BareETISS run_helper.py without specifying a core")
 
-# Resolve thisDir
-thisDir = str(pathlib.Path(__file__).resolve().parent)
-
-# Resolve targetSW and debugger pathes
+# Resolve simulation dir and targetSW
+simDir = str(pathlib.Path(__file__).resolve().parent) + "/simulator"
 targetSW = str(pathlib.Path(args.targetSW).resolve())
-if(args.target_debug):
-    debugger = os.environ.get("PERF_EST_RISCV_ELF_GCC_PREFIX_" + args.core.upper())
-    if(os.environ.get("PERF_EST_RISCV_ELF_GCC_RV32_" + args.core.upper()) == "ON"):
-        debugger += "/bin/riscv32-unknown-elf-gdb"
-    else:
-        debugger += "/bin/riscv64-unknown-elf-gdb"
+
+# # Resolve debugger path
+# if(args.target_debug):
+#     debugger = os.environ.get("PERF_EST_RISCV_ELF_GCC_PREFIX_" + args.core.upper())
+#     if(os.environ.get("PERF_EST_RISCV_ELF_GCC_RV32_" + args.core.upper()) == "ON"):
+#         debugger += "/bin/riscv32-unknown-elf-gdb"
+#     else:
+#         debugger += "/bin/riscv64-unknown-elf-gdb"
 
 # Creating a dynamic ini file for run specific configurations
-dynIni = pathlib.Path(thisDir + "/dyn.ini").resolve()
+dynIni = pathlib.Path(simDir + "/dyn.ini").resolve()
 with dynIni.open('w') as f:
     # Specify target-SW
     f.write("[StringConfigurations]\n")
@@ -45,13 +45,13 @@ with dynIni.open('w') as f:
     if args.bootrom is not None:
         f.write("vp.boot_file=" + str(pathlib.Path(args.bootrom).resolve()))
     # Specify debug-plugin
-    if(args.target_debug):
+    if args.target_debug is not None:
         f.write("[Plugin gdbserver]\n")
         f.write("plugin.gdbserver.port=2222\n")
 
 # Create plugin ini file
 # TODO: Configuring the plugins here is not ideal! Find alternative!
-pluginIni = pathlib.Path(thisDir + "/plugin.ini").resolve()
+pluginIni = pathlib.Path(simDir + "/plugin.ini").resolve()
 with pluginIni.open('w') as f:
     # Specify PerformanceEstimatorPlugin
     if not args.no_performance:
@@ -81,9 +81,9 @@ with pluginIni.open('w') as f:
         f.write("plugin.tracePrinter.stream.rotateSize=0x100000\n")
         
 # Set exe and args pathes
-vp_exe = thisDir + "/build/main"
-vp_args = " -i" + thisDir + "/ini/common.ini"
-vp_args += " -i" + thisDir + "/ini/" + args.core + ".ini"
+vp_exe = simDir + "/build/main"
+vp_args = " -i" + simDir + "/ini/common.ini"
+vp_args += " -i" + simDir + "/ini/" + args.core + ".ini"
 vp_args += " -i" + str(dynIni)
 vp_args += " -i" + str(pluginIni)
 run_sim = vp_exe + vp_args
@@ -91,8 +91,8 @@ run_sim = vp_exe + vp_args
 # Run simulation
 if(args.debug):
     os.system("gdb --args " + run_sim)
-elif(args.target_debug):
-    os.system("konsole --workdir $(pwd) -e \"bash -c \'" + debugger + " -ex \\\"tar rem :2222\\\" " + targetSW + "\'\" &")
+elif args.target_debug is not None:
+    os.system("konsole --workdir $(pwd) -e \"bash -c \'" + args.target_debug + " -ex \\\"tar rem :2222\\\" " + targetSW + "\'\" &")
     os.system(run_sim)
 elif(args.profile):
     os.system("valgrind --tool=callgrind " + run_sim)
