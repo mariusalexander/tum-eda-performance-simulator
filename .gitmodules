@@ -3,4 +3,4 @@
 	url = git@github.com:wysiwyng/etiss.git
 [submodule "etiss_plugins/SoftwareEvalLib"]
 	path = etiss_plugins/SoftwareEvalLib
-	url = git@github.com:tum-ei-eda/SoftwareEvalLib.git
+	url = git@github.com:mariusalexander/tum-eda-performance-simulator-etiss-plugin.git
