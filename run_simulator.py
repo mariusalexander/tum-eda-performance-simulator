@@ -83,6 +83,7 @@ with pluginIni.open('w') as f:
 # Set exe and args pathes
 vp_exe = simDir + "/build/main"
 vp_args = " -i" + simDir + "/ini/common.ini"
+vp_args += " -i" + simDir + "/ini/memory.ini"
 vp_args += " -i" + simDir + "/ini/" + args.core + ".ini"
 vp_args += " -i" + str(dynIni)
 vp_args += " -i" + str(pluginIni)
