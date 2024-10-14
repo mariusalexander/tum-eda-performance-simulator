@@ -8,7 +8,7 @@ __ytext=0.96
 
 logy  = False;
 width = 1.0;
-annotate = False
+annotate = True
 
 # annotate maximum hit count
 def annot_max(xmax, ymax, text, ax=None):
