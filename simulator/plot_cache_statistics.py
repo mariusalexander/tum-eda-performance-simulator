@@ -3,38 +3,89 @@ import pandas as pd
 import numpy as np
 import sys
 
+__xtext=0.94
+__ytext=0.96
+
 logy  = False;
 width = 1.0;
+annotate = False
+
+# annotate maximum hit count
+def annot_max(xmax, ymax, text, ax=None):
+    global __xtext, __ytext
+    if not annotate: return
+    
+    text=text.format(xmax, ymax) #'idx={hex(xmax)[2:]}, hits={ymax}'
+    if not ax:
+        ax=plt.gca()
+    bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
+    arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=60")
+    kw = dict(xycoords='data',textcoords="axes fraction",
+            arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+    ax.annotate(text, xy=(xmax, ymax), xytext=(__xtext, __ytext), **kw)
+    __ytext -= 0.05
+    
 
 files = sys.argv[1:]
 if len(files) == 0: exit()
 
 for file_name in files:
-	df = pd.read_csv(file_name)
-	print(file_name)
-	print(df)
+    ### inits
+    mean = 0
+    ax = None
+    
+    ### read data frame    
+    df = pd.read_csv(file_name)
+    print(file_name)
+    print(df)
 
-	indicies = df['index']
-	nsteps   = 16
-	xticks   = np.arange(15, len(indicies), nsteps)
-	xlabels  = [str(indicies[i]) for i in xticks]
-	
-	# plot accesses
-	ax = None
-	ax = df.plot(kind='bar', x='index', y='hits', color='red', logy=logy, ax=ax, width=width)
-	ax.set(xticks=xticks, xticklabels=xlabels)
-	#ax.fill_between(x=df.index, y1=df.hits, y2=0, where=df.hits > 0, interpolate=True, color='pink')
+    ### prepare x-ticks
+    indicies = df['index']
+   
+    xticks   = np.arange(15, len(indicies), 16)
+    if len(xticks) == 0: 
+        xticks = np.arange(0, len(indicies), 1)   
+    xlabels = [str(indicies[i]) for i in xticks]    
+            
+    ### plot hits
+    data = df['hits']
+    mean += data.mean()
+    
+    ax = df.plot(kind='bar', x=indicies.name, y=data.name, color='red', logy=logy, ax=ax, width=width)
+    ax.set(xticks=xticks, xticklabels=xlabels)
+    #ax.fill_between(x=df.index, y1=df.hits, y2=0, where=df.hits > 0, interpolate=True, color='pink')
 
-	# plot evictions
-	ax = df.plot(kind='bar', x='index', y='evictions', color='blue', logy=logy, ax=ax, width=width)
-	ax.set(xticks=xticks, xticklabels=xlabels)
+    # highlight max hits    
+    xmax = data.idxmax()
+    ymax = data[xmax]
+    print('max hits:', (xmax, ymax))
+    annot_max(xmax, ymax, text='idx={0:X}, hits={1}', ax=ax)
 
-	#ax.yaxis.grid(True)#, color='#EEEEEE')
-	#ax.xaxis.grid(False)
-	
-	plt.grid(color='#EEEEEE')
-	plt.xlabel("cache block no.")
-	plt.ylabel("")
-	plt.title(file_name)
+    ### plot evictions
+    data = df['evictions']
+    mean += data.mean()
+    
+    ax = df.plot(kind='bar', x=indicies.name, y=data.name, color='blue', logy=logy, ax=ax, width=width)
+    ax.set(xticks=xticks, xticklabels=xlabels)
+    
+    # highlight max evictions
+    xmax = data.idxmax()
+    ymax = data[xmax]
+    print('max evictions:', (xmax, ymax))    
+    annot_max(xmax, ymax, text='idx={0:X}, evictions={1}', ax=ax)
+
+    ### mean line
+    print('mean:', mean)
+    plt.plot([0, xticks[-1]], [mean, mean], color='crimson', label=f'avg {mean:.2f}' , linestyle='--')
+    
+    ### plotting settings
+    plt.grid(color='#EEEEEE')
+    plt.xlabel("cache block no.")
+    plt.ylabel("access count")
+    plt.legend(loc='upper left')
+    plt.title(file_name)
+    
+    __ytext=0.96
+
 
 plt.show()
