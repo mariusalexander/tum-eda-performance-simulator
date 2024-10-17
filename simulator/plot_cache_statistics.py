@@ -8,7 +8,7 @@ __ytext=0.96
 
 logy  = False;
 width = 1.0;
-annotate = True
+annotate = False
 
 # annotate maximum hit count
 def annot_max(xmax, ymax, text, ax=None):
@@ -31,7 +31,6 @@ if len(files) == 0: exit()
 
 for file_name in files:
     ### inits
-    mean = 0
     ax = None
     
     ### read data frame    
@@ -49,7 +48,7 @@ for file_name in files:
             
     ### plot hits
     data = df['hits']
-    mean += data.mean()
+    meanHits = data.mean()
     
     ax = df.plot(kind='bar', x=indicies.name, y=data.name, color='red', logy=logy, ax=ax, width=width)
     ax.set(xticks=xticks, xticklabels=xlabels)
@@ -63,7 +62,7 @@ for file_name in files:
 
     ### plot evictions
     data = df['evictions']
-    mean += data.mean()
+    meanEvictions = data.mean()
     
     ax = df.plot(kind='bar', x=indicies.name, y=data.name, color='blue', logy=logy, ax=ax, width=width)
     ax.set(xticks=xticks, xticklabels=xlabels)
@@ -75,8 +74,10 @@ for file_name in files:
     annot_max(xmax, ymax, text='idx={0:X}, evictions={1}', ax=ax)
 
     ### mean line
-    print('mean:', mean)
-    plt.plot([0, xticks[-1]], [mean, mean], color='crimson', label=f'avg {mean:.2f}' , linestyle='--')
+    print('mean hits:', meanHits)
+    print('mean evictions:', meanEvictions)
+    plt.plot([0, xticks[-1]], [meanHits, meanHits], color='crimson', label=f'avg {meanHits:.1f} hits' , linestyle='--')
+    plt.plot([0, xticks[-1]], [meanEvictions, meanEvictions], color='darkblue', label=f'avg {meanEvictions:.1f} evictions' , linestyle='--')
     
     ### plotting settings
     plt.grid(color='#EEEEEE')
