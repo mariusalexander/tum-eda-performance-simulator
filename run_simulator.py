@@ -56,7 +56,7 @@ with pluginIni.open('w') as f:
     # Specify PerformanceEstimatorPlugin
     if not args.no_performance:
         f.write("[Plugin PerformanceEstimatorPlugin]\n")
-        f.write("plugin.perfEst.uArch=" + args.core.upper() + "\n")
+        f.write("plugin.perfEst.uArch=" + (args.core.upper() if args.core.startswith("cv") else args.core) + "\n")
         if (perfTrace:=args.trace_performance) is not None:
             f.write("plugin.perfEst.print=1\n")
             f.write("plugin.perfEst.printDir=" + str(pathlib.Path(perfTrace).resolve()) + "\n")
@@ -82,7 +82,7 @@ with pluginIni.open('w') as f:
         f.write("plugin.tracePrinter.stream.outDir=" + str(pathlib.Path(instrTrace).resolve()) + "\n")
         f.write("plugin.tracePrinter.stream.fileName=instr_trace\n")
         f.write("plugin.tracePrinter.stream.rotateSize=0x100000\n")
-        
+
 # Set exe and args pathes
 vp_exe = simDir + "/build/main"
 vp_args = " -i" + simDir + "/ini/common.ini"
